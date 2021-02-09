@@ -1,5 +1,5 @@
 {
-  "name": "cnect-web/user_agreement",
+  "name": "drupal/user_agreement",
   "type": "drupal-module",
   "description": "User Agreement.",
   "homepage": "https://github.com/cnect-web/user_agreement",
