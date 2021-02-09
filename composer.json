@@ -1,0 +1,28 @@
+{
+  "name": "cnect-web/user_agreement",
+  "type": "drupal-module",
+  "description": "User Agreement.",
+  "homepage": "https://github.com/cnect-web/user_agreement",
+  "authors": [
+    {
+      "name": "Horacio Lopes",
+      "homepage": "https://github.com/orgs/cnect-web/people/horaciolopesqq",
+      "role": "Maintainer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/cnect-web/user_agreement/issues",
+    "source": "https://github.com/cnect-web/user_agreement"
+  },
+  "license": "GPL-2.0-or-later",
+  "minimum-stability": "dev",
+  "require": {
+    "drupal/core": "^8.8 || ^9"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
+  ]
+}

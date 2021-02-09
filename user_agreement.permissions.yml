@@ -1,0 +1,81 @@
+add user agreement entities:
+  title: 'Create new User agreement entities'
+
+administer user agreement entities:
+  title: 'Administer User agreement entities'
+  description: 'Allow to access the administration form to configure User agreement entities.'
+  restrict access: true
+
+delete user agreement entities:
+  title: 'Delete User agreement entities'
+
+edit user agreement entities:
+  title: 'Edit User agreement entities'
+
+view published user agreement entities:
+  title: 'View published User agreement entities'
+
+view unpublished user agreement entities:
+  title: 'View unpublished User agreement entities'
+
+view all user agreement revisions:
+  title: 'View all User agreement revisions'
+
+revert all user agreement revisions:
+  title: 'Revert all User agreement revisions'
+  description: 'Role requires permission <em>view User agreement revisions</em> and <em>edit rights</em> for user agreement entities in question or <em>administer user agreement entities</em>.'
+
+delete all user agreement revisions:
+  title: 'Delete all revisions'
+  description: 'Role requires permission to <em>view User agreement revisions</em> and <em>delete rights</em> for user agreement entities in question or <em>administer user agreement entities</em>.'
+
+add user agreement entities:
+  title: 'Create new User agreement entities'
+
+administer user agreement entities:
+  title: 'Administer User agreement entities'
+  description: 'Allow to access the administration form to configure User agreement entities.'
+  restrict access: true
+
+delete user agreement entities:
+  title: 'Delete User agreement entities'
+
+edit user agreement entities:
+  title: 'Edit User agreement entities'
+
+view published user agreement entities:
+  title: 'View published User agreement entities'
+
+view unpublished user agreement entities:
+  title: 'View unpublished User agreement entities'
+
+view all user agreement revisions:
+  title: 'View all User agreement revisions'
+
+revert all user agreement revisions:
+  title: 'Revert all User agreement revisions'
+  description: 'Role requires permission <em>view User agreement revisions</em> and <em>edit rights</em> for user agreement entities in question or <em>administer user agreement entities</em>.'
+
+delete all user agreement revisions:
+  title: 'Delete all revisions'
+  description: 'Role requires permission to <em>view User agreement revisions</em> and <em>delete rights</em> for user agreement entities in question or <em>administer user agreement entities</em>.'
+
+add user agreement submission entities:
+  title: 'Create new User agreement submission entities'
+
+administer user agreement submission entities:
+  title: 'Administer User agreement submission entities'
+  description: 'Allow to access the administration form to configure User agreement submission entities.'
+  restrict access: true
+
+delete user agreement submission entities:
+  title: 'Delete User agreement submission entities'
+
+edit user agreement submission entities:
+  title: 'Edit User agreement submission entities'
+
+view published user agreement submission entities:
+  title: 'View published User agreement submission entities'
+
+view unpublished user agreement submission entities:
+  title: 'View unpublished User agreement submission entities'

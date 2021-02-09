@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Contains user_agreement.install.
+ */
+
+use Drupal\user\Entity\Role;
+use Drupal\user\RoleInterface;
+
+/**
+ * Implements hook_install().
+ */
+function user_agreement_install() {
+  $roles = Role::loadMultiple([
+    RoleInterface::ANONYMOUS_ID,
+    RoleInterface::AUTHENTICATED_ID,
+  ]);
+  $grant_permission = 'view published user agreement entities';
+  foreach ($roles as $role) {
+    $role->grantPermission($grant_permission);
+    $role->save();
+  }
+}

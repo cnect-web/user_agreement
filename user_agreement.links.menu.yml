@@ -1,0 +1,7 @@
+# User agreement menu items definition
+entity.user_agreement.collection:
+  title: 'User agreements'
+  route_name: entity.user_agreement.collection
+  description: 'List User agreements'
+  parent: system.admin_structure
+  weight: 100

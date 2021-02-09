@@ -1,0 +1,12 @@
+services:
+  user_agreement.redirect_event_subscriber:
+    class: Drupal\user_agreement\EventSubscriber\UserAgreementRedirectSubscriber
+    arguments: ['@current_user', '@current_route_match', '@entity_type.manager', '@messenger', '@path.current']
+    tags:
+      - {name: event_subscriber}
+
+  user_agreement.user_submission_subscriber:
+    class: Drupal\user_agreement\EventSubscriber\UserAgreementSubmissionEventSubscriber
+    arguments: ['@current_user', '@entity_type.manager', '@messenger', '@user.data', '@queue']
+    tags:
+    - { name: event_subscriber }

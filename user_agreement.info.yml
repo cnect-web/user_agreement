@@ -1,0 +1,9 @@
+name: 'User Agreement'
+type: module
+description: 'User Agreement'
+package: 'Custom'
+core_version_requirement: ^8 || ^9
+php: 7.1
+dependencies:
+  - drupal:views
+  - drupal:views_bulk_operations
