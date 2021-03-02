@@ -235,4 +235,43 @@ class UserAgreementSubmission extends ContentEntityBase implements UserAgreement
     return $fields;
   }
 
+  /**
+   * Load user agreement submissions by user agreement, email hash and status.
+   *
+   * @param \Drupal\user_agreement\Entity\UserAgreement $agreement
+   *   The user agreement to which the submissions belong to.
+   * @param string $email_hash
+   *   The email hash to which the submissions belong to.
+   * @param int $status
+   *   The submission status (Accepted or Rejected).
+   *
+   * @return \Drupal\Core\Entity\EntityInterface[]
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public static function loadByAgreementIdEmailHashAndStatus(UserAgreement $agreement, string $email_hash, int $status) {
+    $storage = \Drupal::entityTypeManager()->getStorage('user_agreement_submission');
+    return $storage->loadByProperties([
+      'user_agreement' => $agreement->id(),
+      'user_agreement_vid' => $agreement->getRevisionId(),
+      'email_hash' => $email_hash,
+      'status' => $status,
+    ]);
+  }
+
+  /**
+   * Load user agreements submissions by email hash.
+   *
+   * @param $email_hash
+   *   The email hash to load submissions for.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface[]
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public static function loadByEmailHash($email_hash) {
+    $storage = \Drupal::entityTypeManager()->getStorage('user_agreement_submission');
+    return $storage->loadByProperties(['email_hash' => $email_hash]);
+  }
+
 }
