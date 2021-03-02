@@ -137,11 +137,11 @@ class AgreementForm extends FormBase {
     }
     // Otherwise, reset state.
     else {
-      $this->privateTempstore->delete('email_hash');
-      $this->privateTempstore->delete('accepted');
-      $this->privateTempstore->delete('ticket');
-      $this->privateTempstore->delete('property_bag');
-      $this->privateTempstore->delete('service_parameters');
+      $this->privateTempStore->delete('email_hash');
+      $this->privateTempStore->delete('accepted');
+      $this->privateTempStore->delete('ticket');
+      $this->privateTempStore->delete('property_bag');
+      $this->privateTempStore->delete('service_parameters');
     }
     $this->privateTempStore->delete('handling_response');
   }
