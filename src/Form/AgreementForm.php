@@ -6,6 +6,8 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user_agreement\Entity\UserAgreement;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Messenger\Messenger;
+use Drupal\Core\Url;
 
 /**
  * Class AgreementForm.
@@ -36,6 +38,20 @@ class AgreementForm extends FormBase {
   protected $privateTempStore;
 
   /**
+   * Messenger service.
+   *
+   * @var \Drupal\Core\Messenger\Messenger
+   */
+  protected $messenger;
+
+  /**
+   * The CAS helper service.
+   *
+   * @var \Drupal\cas\Service\CasHelper
+   */
+  protected $casHelper;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -44,6 +60,8 @@ class AgreementForm extends FormBase {
     $instance->entityTypeManager = $container->get('entity_type.manager');
     $instance->routeMatch = $container->get('current_route_match');
     $instance->privateTempStore = $tempstore->get('user_agreement');
+    $instance->messenger = $container->get('messenger');
+    $instance->casHelper = $container->get('cas.helper');
     return $instance;
   }
 
@@ -122,6 +140,8 @@ class AgreementForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $this->privateTempStore->delete('handling_response');
+
     $values = $form_state->getValues();
     $user_agreement = $this
       ->entityTypeManager
@@ -142,8 +162,13 @@ class AgreementForm extends FormBase {
       $this->privateTempStore->delete('ticket');
       $this->privateTempStore->delete('property_bag');
       $this->privateTempStore->delete('service_parameters');
+
+      $this->messenger->addError($this->t("You have rejected the user agreement."));
+
+      $this->casHelper->handleReturnToParameter($this->getRequest());
+      $url = Url::fromRoute('<front>');
+      $form_state->setRedirectUrl($url);
     }
-    $this->privateTempStore->delete('handling_response');
   }
 
 }

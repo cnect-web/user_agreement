@@ -71,6 +71,13 @@ class UserAgreementRedirectSubscriber implements EventSubscriberInterface {
   protected $casUserManager;
 
   /**
+   * The CAS helper service.
+   *
+   * @var \Drupal\cas\Service\CasHelper
+   */
+  protected $casHelper;
+
+  /**
    * The event dispatcher service.
    *
    * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
