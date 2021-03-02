@@ -3,6 +3,7 @@
 namespace Drupal\user_agreement\Plugin\views\field;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\user_agreement\Entity\UserAgreementSubmission;
 use Drupal\views\ResultRow;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 
@@ -23,11 +24,11 @@ class UserAgreementStatusField extends FieldPluginBase {
   public function render(ResultRow $values) {
     $value = $this->getValue($values);
     switch ($value) {
-      case '0':
+      case UserAgreementSubmission::REJECTED:
         $value = $this->t("Rejected");
         break;
 
-      case '1':
+      case UserAgreementSubmission::ACCEPTED:
         $value = $this->t("Accepted");
         break;
 

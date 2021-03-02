@@ -2,6 +2,7 @@
 
 namespace Drupal\user_agreement\Plugin\views\filter;
 
+use Drupal\user_agreement\Entity\UserAgreementSubmission;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\filter\InOperator;
 use Drupal\views\ViewExecutable;
@@ -61,8 +62,8 @@ class UserAgreementStatusFieldFilter extends InOperator {
   public function generateOptions() {
     // Array keys are used to compare with the table field values.
     return [
-      '0' => $this->t("Rejected"),
-      '1' => $this->t("Accepted"),
+      UserAgreementSubmission::ACCEPTED => $this->t("Accepted"),
+      UserAgreementSubmission::REJECTED => $this->t("Rejected"),
     ];
   }
 
