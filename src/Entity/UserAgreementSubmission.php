@@ -210,6 +210,24 @@ class UserAgreementSubmission extends ContentEntityBase implements UserAgreement
       ->setDisplayConfigurable('view', TRUE)
       ->setRequired(TRUE);
 
+    $fields["email_hash"] = BaseFieldDefinition::create("string")
+      ->setLabel(t("User Email Hash"))
+      ->setDescription(t("An hash of the user email"))
+      ->setSettings([
+        'max_length' => 255,
+        'text_processing' => 0,
+      ])
+      ->setDefaultValue("")
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'author',
+        'weight' => 0,
+      ])
+      ->setDisplayOptions("form", [
+        "type" => "string_textfield",
+        "weight" => -3
+      ]);
+
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time that the entity was created.'));

@@ -7,6 +7,8 @@
 
 use Drupal\user\Entity\Role;
 use Drupal\user\RoleInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Component\Utility\Crypt;
 
 /**
  * Implements hook_install().
@@ -20,5 +22,47 @@ function user_agreement_install() {
   foreach ($roles as $role) {
     $role->grantPermission($grant_permission);
     $role->save();
+  }
+}
+
+/**
+ * Update user agreement submission entities.
+ *
+ * Add field for email hash.
+ */
+function user_agreement_update_8001() {
+  $field_storage_definition = BaseFieldDefinition::create("string")
+    ->setLabel(t("User Email Hash"))
+    ->setDescription(t("An hash of the user email"))
+    ->setSettings([
+      'max_length' => 255,
+      'text_processing' => 0,
+    ])
+    ->setDefaultValue("")
+    ->setDisplayOptions('view', [
+      'label' => 'hidden',
+      'type' => 'author',
+      'weight' => 0,
+    ])
+    ->setDisplayOptions("form", [
+      "type" => "string_textfield",
+      "weight" => -3
+    ]);
+
+  \Drupal::entityDefinitionUpdateManager()
+    ->installFieldStorageDefinition('email_hash', 'user_agreement_submission', 'user_agreement', $field_storage_definition);
+
+  // Update value in existing agreements.
+  $existing_submissions = \Drupal::entityTypeManager()
+    ->getStorage('user_agreement_submission')
+    ->loadMultiple();
+
+  foreach ($existing_submissions as $existing_submission) {
+    if ($user = $existing_submission->user->entity) {
+      $email = $user->mail->value;
+      $hash = Crypt::hashBase64($email);
+      $existing_submission->set('email_hash', $hash);
+      $existing_submission->save();
+    }
   }
 }
