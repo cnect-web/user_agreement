@@ -5,12 +5,14 @@
  * Contains user_agreement.module.
  */
 
+use Drupal\Core\Session\AccountProxy;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\user_agreement\Entity\UserAgreement;
 use Drupal\user_agreement\Entity\UserAgreementSubmission;
 use Drupal\user\Entity\User;
+use Drupal\Component\Utility\Crypt;
 
 /**
  * Implements hook_help().
@@ -33,50 +35,28 @@ function user_agreement_help($route_name, RouteMatchInterface $route_match) {
  */
 function user_agreement_user_agreement_view_alter(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display) {
   $account = \Drupal::service('current_user');
-  if ($account->isAuthenticated()) {
-    if ($build['#view_mode'] == 'full') {
-      if (!$entity->isPublished()) {
-        $message = [
-          '#theme' => 'status_messages',
-          '#message_list' => [
-            'warning' => [
-              t("This content is not published."),
-            ],
-          ],
-          '#status_headings' => [
-            'warning' => t('Warning'),
-          ],
-        ];
+  if ($account->isAnonymous()) {
+    $tempstore = \Drupal::service('tempstore.private');
+    $store = $tempstore->get('user_agreement');
+    if($property_bag = $store->get('property_bag')) {
+      $hash = Crypt::hashBase64($property_bag->getAttribute('email'));
 
-        $build['agreement_form'] = [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#value' => \Drupal::service('renderer')->render($message),
-          '#attributes' => ['data-drupal-messages'],
-        ];
+      if (!_user_agreement_user_has_agreed($entity, $hash)) {
+        $build['agreement_form'] = \Drupal::formBuilder()
+          ->getForm(Drupal\user_agreement\Form\AgreementForm::class);
       }
-      else {
-        // The form/status should only show in the canonical route.
-        $route = \Drupal::routeMatch()->getRouteName();
-        if ($route && $route == 'entity.user_agreement.canonical') {
-          $account = User::load($account->id());
-          if (!_user_agreement_user_is_exempt($account)) {
-            if (!_user_agreement_user_has_agreed($entity, $account)) {
-              $build['agreement_form'] = \Drupal::formBuilder()
-                ->getForm('Drupal\user_agreement\Form\AgreementForm', []);
-            }
-            else {
-              $build['agreement_form'] = [
-                '#type' => 'html_tag',
-                '#tag' => 'span',
-                '#value' => t('You have agreed with :agreement_title', [
-                  ':agreement_title' => $entity->label(),
-                ]),
-              ];
-            }
-          }
-        }
-      }
+    }
+  }
+  else {
+    if (_user_agreement_user_is_exempt($account)) {
+      $build['agreement_form'] = [
+        '#markup' => t("You are exempt from having to accept this agreement."),
+      ];
+    }
+    else {
+      $build['agreement_form'] = [
+        '#markup' => t("You have accepted this agreement."),
+      ];
     }
   }
 }
@@ -92,38 +72,62 @@ function user_agreement_user_agreement_view_alter(array &$build, EntityInterface
  * @return bool
  *   True if the user is exempt of filling user agreements.
  */
-function _user_agreement_user_is_exempt(User $user) {
-  return $user->hasPermission('administer user agreement entities');
+function _user_agreement_user_is_exempt(AccountProxy $account) {
+  return $account->hasPermission('administer user agreement entities');
 }
 
 /**
  * Helper.
  *
- * Verifies if an account has agreed to an user agreement.
+ * Verifies if an account has agreed to a user agreement.
  *
  * @param \Drupal\user_agreement\Entity\UserAgreement $agreement
  *   An user agreement entity.
- * @param \Drupal\user\Entity\User $user
- *   An user account.
+ * @param string $email_hash
+ *   An hash of the email trying to login.
  *
  * @return bool
  *   True if the user has agreed to the user agreement.
  */
-function _user_agreement_user_has_agreed(UserAgreement $agreement, User $user) {
-  $query = \Drupal::entityQuery('user_agreement_submission')
-    ->condition('user_agreement_vid', $agreement->getRevisionId())
-    ->condition('user_agreement.entity.id', $agreement->id())
-    ->condition('user.entity.uid', $user->id())
-    ->condition('status', UserAgreementSubmission::ACCEPTED);
+function _user_agreement_user_has_agreed(UserAgreement $agreement, string $email_hash) {
+  $status = UserAgreementSubmission::ACCEPTED;
+  $user_agreement_submission = UserAgreementSubmission::loadByAgreementIdEmailHashAndStatus($agreement, $email_hash, $status);
 
-  $user_agreement_submission = $query->execute();
-  return !empty($user_agreement_submission);
+  return !empty($user_agreement_submission) || _user_agreement_user_has_agreed_in_session($agreement);
+}
+
+/**
+ * Helper.
+ *
+ * Verifies if an account has agreed to a user agreement in the current session.
+ *
+ * @param \Drupal\user_agreement\Entity\UserAgreement $agreement
+ *   An user agreement entity.
+ *
+ * @return bool
+ *   True if the user has agreed to the user agreement in this session.
+ */
+function _user_agreement_user_has_agreed_in_session(UserAgreement $agreement) {
+  $tempstore = \Drupal::service('tempstore.private')->get('user_agreement');
+  $accepted_in_session = $tempstore->get('accepted');
+
+  return isset($accepted_in_session[$agreement->id()]) && $accepted_in_session[$agreement->id()] == $agreement->getRevisionId();
 }
 
 /**
  * Implements hook_ENTITY_TYPE_delete().
+ *
+ * Delete all user agreement submissions when a user is deleted.
  */
 function user_agreement_user_delete(User $user) {
+  // Delete by email hash.
+  $hash = Crypt::hashBase64($user->getEmail());
+  $user_agreement_submissions = UserAgreementSubmission::loadByEmailHash($hash);
+  foreach ($user_agreement_submissions as $user_agreement_submission) {
+    $user_agreement_submission->delete();
+  }
+
+  // Probably not needed, unless email changed.
   $user_agreement_submissions = \Drupal::entityTypeManager()
     ->getStorage('user_agreement_submission')
     ->loadByProperties(['user' => $user->id()]);
@@ -135,6 +139,8 @@ function user_agreement_user_delete(User $user) {
 
 /**
  * Implements hook_ENTITY_TYPE_delete().
+ *
+ * Delete all submissions when a user agreement entity is deleted.
  */
 function user_agreement_user_agreement_delete(UserAgreement $user_agreement) {
   $user_agreement_submissions = \Drupal::entityTypeManager()
@@ -148,6 +154,8 @@ function user_agreement_user_agreement_delete(UserAgreement $user_agreement) {
 
 /**
  * Implements hook_ENTITY_TYPE_revision_delete().
+ *
+ * Delete all submissions when a user agreement entity revision is deleted.
  */
 function user_agreement_user_agreement_revision_delete(UserAgreement $user_agreement) {
   $delete_ids = \Drupal::entityQuery('user_agreement_submission')

@@ -2,15 +2,15 @@
 
 namespace Drupal\user_agreement\EventSubscriber;
 
+use Drupal\Component\Utility\Crypt;
+use Drupal\Core\Session\AccountProxy;
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Messenger\Messenger;
-use Drupal\Core\Queue\QueueFactory;
-use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\user\UserDataInterface;
+use Drupal\user_agreement\Entity\UserAgreementSubmission;
 use Drupal\user_agreement\Event\UserSubmissionEvent;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Class UserAgreementSubmissionEventSubscriber.
@@ -20,13 +20,6 @@ use Symfony\Component\EventDispatcher\Event;
 class UserAgreementSubmissionEventSubscriber implements EventSubscriberInterface {
 
   use StringTranslationTrait;
-
-  /**
-   * Drupal\Core\Session\AccountProxyInterface definition.
-   *
-   * @var \Drupal\Core\Session\AccountProxyInterface
-   */
-  protected $currentUser;
 
   /**
    * Entity type manager service.
@@ -43,28 +36,19 @@ class UserAgreementSubmissionEventSubscriber implements EventSubscriberInterface
   protected $messenger;
 
   /**
-   * User data service.
+   * Current user service.
    *
-   * @var \Drupal\user\UserDataInterface
+   * @var \Drupal\Core\Session\AccountProxy
    */
-  protected $userData;
-
-  /**
-   * Queue factory service.
-   *
-   * @var \Drupal\Core\Queue\QueueFactory
-   */
-  protected $queueFactory;
+  protected $currentUser;
 
   /**
    * Constructs a new UserAgreementSubmissionEventSubscriber object.
    */
-  public function __construct(AccountProxyInterface $current_user, EntityTypeManager $entity_type_manager, Messenger $messenger, UserDataInterface $user_data, QueueFactory $queue_factory) {
-    $this->currentUser = $current_user;
+  public function __construct(EntityTypeManager $entity_type_manager, Messenger $messenger, AccountProxy $current_user) {
     $this->entityTypeManager = $entity_type_manager;
     $this->messenger = $messenger;
-    $this->userData = $user_data;
-    $this->queueFactory = $queue_factory;
+    $this->currentUser = $current_user;
   }
 
   /**
@@ -84,8 +68,26 @@ class UserAgreementSubmissionEventSubscriber implements EventSubscriberInterface
    *   The dispatched event.
    */
   public function userAccepted(Event $event) {
-    $submission = $event->submission;
-    $user_agreement = $submission->get('user_agreement')->entity;
+    $user_agreement = $event->user_agreement;
+    $account = $this->currentUser->getAccount();
+
+    $name = $this->t('Agreement | User :uid - :agreement (R. :agreement_vid)', [
+      ':uid' => $account->id(),
+      ':agreement' => $user_agreement->id(),
+      ':agreement_vid' => $user_agreement->getRevisionId(),
+    ])->render();
+
+    $user_agreement_submission_data = [
+      'name' => $name,
+      'user_agreement' => ['target_id' => $user_agreement->id()],
+      'user_agreement_vid' => $user_agreement->getRevisionId(),
+      'user' => $account->id(),
+      'status' => UserAgreementSubmission::ACCEPTED,
+      'email_hash' => Crypt::hashBase64($account->getEmail()),
+    ];
+
+    $user_agreement_submission = UserAgreementSubmission::create($user_agreement_submission_data);
+    $user_agreement_submission->save();
 
     $this->messenger->addMessage($this->t('You have agreed with %label.', ['%label' => $user_agreement->label()]), 'status');
   }
@@ -97,25 +99,11 @@ class UserAgreementSubmissionEventSubscriber implements EventSubscriberInterface
    *   The dispatched event.
    */
   public function userRejected(Event $event) {
-    $submission = $event->submission;
-    $user_agreement = $submission->get('user_agreement')->entity;
+    $user_agreement = $event->user_agreement;
 
-    $rejected_user_agreements = (array) $this->userData->get('user_agreement', $this->currentUser->id(), 'rejected_user_agreements');
-    $rejected_user_agreements[$user_agreement->id()] = $user_agreement->getDefaultRevisionId();
-    $this->userData->set('user_agreement', $this->currentUser->id(), 'rejected_user_agreements', $rejected_user_agreements);
-
-    $this->messenger->addMessage($this->t('You have not agreed with %label.', ['%label' => $user_agreement->label()]), 'error');
-
-    /** @var QueueInterface $queue */
-    $queue = $this->queueFactory->get('user_agreement_queue');
-
-    $item = new \stdClass();
-    $item->agreement_id = $user_agreement->id();
-    $item->agreement_vid = $user_agreement->getDefaultRevisionId();
-    $item->agreement_uid = $this->currentUser->id();
-    $item->created = time();
-
-    $queue->createItem($item);
+    $this->messenger->addMessage($this->t('You have not agreed with %label.', [
+      '%label' => $user_agreement->label()
+    ]), 'error');
   }
 
 }

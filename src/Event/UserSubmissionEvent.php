@@ -2,9 +2,9 @@
 
 namespace Drupal\user_agreement\Event;
 
-use Drupal\user\UserInterface;
+use Drupal\Core\Url;
+use Drupal\user_agreement\Entity\UserAgreement;
 use Symfony\Component\EventDispatcher\Event;
-use Drupal\user_agreement\Entity\UserAgreementSubmission;
 
 /**
  * Event that is fired when a user submits agrees/reject an user agreement.
@@ -22,11 +22,11 @@ class UserSubmissionEvent extends Event {
   public $submission;
 
   /**
-   * The user account.
+   * The form redirect URL.
    *
-   * @var \Drupal\user\UserInterface
+   * @var \Drupal\Core\Url
    */
-  public $account;
+  protected $redirectUrl;
 
   /**
    * Constructs the object.
@@ -34,11 +34,34 @@ class UserSubmissionEvent extends Event {
    * @param \Drupal\user_agreement\Entity\UserAgreementSubmission $submission
    *   The user agreement submission entity.
    * @param \Drupal\user\UserInterface $account
-   *   The account of the user logged in.
+   *   The account of the logged in user.
    */
-  public function __construct(UserAgreementSubmission $submission, UserInterface $account) {
-    $this->account = $account;
-    $this->submission = $submission;
+  public function __construct(UserAgreement $user_agreement) {
+    $this->user_agreement = $user_agreement;
   }
+
+  /**
+   * Sets the form redirect URL.
+   *
+   * @param \Drupal\Core\Url $redirect_url
+   *   The form redirect URL.
+   *
+   * @return $this
+   */
+  public function setRedirectUrl(Url $redirect_url): self {
+    $this->redirectUrl = $redirect_url;
+    return $this;
+  }
+
+  /**
+   * Returns the form redirect URL.
+   *
+   * @return \Drupal\Core\Url|null
+   *   The form redirect URL.
+   */
+  public function getRedirectUrl(): ?Url {
+    return $this->redirectUrl;
+  }
+
 
 }

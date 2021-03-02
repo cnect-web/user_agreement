@@ -4,10 +4,8 @@ namespace Drupal\user_agreement\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\user_agreement\Event\UserSubmissionEvent;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\user_agreement\Entity\UserAgreement;
-use Drupal\user_agreement\Entity\UserAgreementSubmission;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class AgreementForm.
@@ -15,13 +13,6 @@ use Drupal\user_agreement\Entity\UserAgreementSubmission;
  * Provides agreement form.
  */
 class AgreementForm extends FormBase {
-
-  /**
-   * Drupal\Core\Session\AccountProxyInterface definition.
-   *
-   * @var \Drupal\Core\Session\AccountProxyInterface
-   */
-  protected $currentUser;
 
   /**
    * The route match.
@@ -38,21 +29,21 @@ class AgreementForm extends FormBase {
   protected $entityTypeManager;
 
   /**
-   * The event dispatcher service.
+   * The private temp store.
    *
-   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   * @var \Drupal\Core\TempStore\PrivateTempStore
    */
-  protected $eventDispatcher;
+  protected $privateTempStore;
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     $instance = parent::create($container);
-    $instance->currentUser = $container->get('current_user');
-    $instance->routeMatch = $container->get('current_route_match');
+    $tempstore = $container->get('tempstore.private');
     $instance->entityTypeManager = $container->get('entity_type.manager');
-    $instance->eventDispatcher = $container->get('event_dispatcher');
+    $instance->routeMatch = $container->get('current_route_match');
+    $instance->privateTempStore = $tempstore->get('user_agreement');
     return $instance;
   }
 
@@ -84,11 +75,6 @@ class AgreementForm extends FormBase {
     $form['agreement_vid'] = [
       '#type' => 'hidden',
       '#value' => $agreement_entity->getRevisionId(),
-    ];
-
-    $form['user_id'] = [
-      '#type' => 'hidden',
-      '#value' => $this->currentUser->id(),
     ];
 
     if ($more_info = $agreement_entity->getMoreInfo()) {
@@ -136,58 +122,28 @@ class AgreementForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Display result.
     $values = $form_state->getValues();
-
-    $user_agreement = $this->entityTypeManager->getStorage('user_agreement')
+    $user_agreement = $this
+      ->entityTypeManager
+      ->getStorage('user_agreement')
       ->load($values['agreement_id']);
 
-    $user = $this->entityTypeManager->getStorage('user')
-      ->load($values['user_id']);
-
-    if (!_user_agreement_user_has_agreed($user_agreement, $user)) {
-
-      $user_agreement_submission_data = [
-        'name' => $this->t('Agreement | User :uid - :agreement (R. :agreement_vid)', [
-          ':uid' => $user->id(),
-          ':agreement' => $user_agreement->id(),
-          ':agreement_vid' => $values['agreement_vid'],
-        ])->render(),
-        'user_agreement' => ['target_id' => $values['agreement_id']],
-        'user_agreement_vid' => $values['agreement_vid'],
-        'user' => $values['user_id'],
-      ];
-
-      switch ($values['agree_box']) {
-        case 0:
-          $user_agreement_submission_data['status'] = UserAgreementSubmission::REJECTED;
-          $event_name = UserSubmissionEvent::REJECTED;
-          break;
-
-        case 1:
-          $user_agreement_submission_data['status'] = UserAgreementSubmission::ACCEPTED;
-          $event_name = UserSubmissionEvent::ACCEPTED;
-          break;
-      }
-
-      if ($existing_user_agreement_submission = $this->entityTypeManager->getStorage('user_agreement_submission')
-        ->loadByProperties([
-          'user' => $values['user_id'],
-          'user_agreement' => $values['agreement_id'],
-          'user_agreement_vid' => $values['agreement_vid'],
-        ])) {
-        $user_agreement_submission = array_shift($existing_user_agreement_submission);
-        $user_agreement_submission->delete();
-      }
-
-      $user_agreement_submission = UserAgreementSubmission::create($user_agreement_submission_data);
-      $user_agreement_submission->save();
-
-      $event = new UserSubmissionEvent($user_agreement_submission, $user);
-      $this->eventDispatcher->dispatch($event_name, $event);
-
+    // If accepted, add the agreement info to the private tempstore for
+    // processing later.
+    if ($values['agree_box'] == 1) {
+      $accepted = $this->privateTempStore->get('accepted');
+      $accepted[$user_agreement->id()] = $user_agreement->getRevisionId();
+      $this->privateTempStore->set('accepted', $accepted);
     }
-
+    // Otherwise, reset state.
+    else {
+      $this->privateTempstore->delete('email_hash');
+      $this->privateTempstore->delete('accepted');
+      $this->privateTempstore->delete('ticket');
+      $this->privateTempstore->delete('property_bag');
+      $this->privateTempstore->delete('service_parameters');
+    }
+    $this->privateTempStore->delete('handling_response');
   }
 
 }
