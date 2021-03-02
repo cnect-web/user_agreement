@@ -5,3 +5,10 @@ entity.user_agreement.collection:
   description: 'List User agreements'
   parent: system.admin_structure
   weight: 100
+
+user_agreement.admin.structure.settings:
+  title: 'User agreements settings'
+  description: 'Configure User agreements'
+  route_name: user_agreement.settings
+  parent: entity.user_agreement.collection
+#  parent: system.admin_structure

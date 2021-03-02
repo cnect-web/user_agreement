@@ -1,8 +1,17 @@
-# User agreement routing definition
-user_agreement.settings_tab:
+entity.user_agreement.collection_tab:
+  title: List
+  route_name: entity.user_agreement.collection
+  base_route: entity.user_agreement.collection
+
+user_agreement.settings_tab_default:
+  title: Settings
   route_name: user_agreement.settings
-  title: 'Settings'
-  base_route: user_agreement.settings
+  base_route: entity.user_agreement.collection
+
+user_agreement.settings_tab:
+  title: Settings
+  route_name: user_agreement.settings
+  parent_id: user_agreement.settings_tab_default
 
 entity.user_agreement.canonical:
   route_name: entity.user_agreement.canonical

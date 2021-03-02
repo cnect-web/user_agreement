@@ -1,0 +1,10 @@
+user_agreement.user_agreement_settings_form:
+  path: '/admin/structure/user_agreement/settings'
+  defaults:
+    _form: '\Drupal\user_agreement\Form\UserAgreementSettingsForm'
+    _title: 'User agreements settings'
+  requirements:
+    _permission: 'administer site configuration'
+# todo
+#  options:
+#    _admin_route: TRUE
