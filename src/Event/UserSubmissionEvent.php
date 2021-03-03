@@ -22,13 +22,6 @@ class UserSubmissionEvent extends Event {
   public $submission;
 
   /**
-   * The form redirect URL.
-   *
-   * @var \Drupal\Core\Url
-   */
-  protected $redirectUrl;
-
-  /**
    * Constructs the object.
    *
    * @param \Drupal\user_agreement\Entity\UserAgreementSubmission $submission
@@ -39,29 +32,5 @@ class UserSubmissionEvent extends Event {
   public function __construct(UserAgreement $user_agreement) {
     $this->user_agreement = $user_agreement;
   }
-
-  /**
-   * Sets the form redirect URL.
-   *
-   * @param \Drupal\Core\Url $redirect_url
-   *   The form redirect URL.
-   *
-   * @return $this
-   */
-  public function setRedirectUrl(Url $redirect_url): self {
-    $this->redirectUrl = $redirect_url;
-    return $this;
-  }
-
-  /**
-   * Returns the form redirect URL.
-   *
-   * @return \Drupal\Core\Url|null
-   *   The form redirect URL.
-   */
-  public function getRedirectUrl(): ?Url {
-    return $this->redirectUrl;
-  }
-
 
 }

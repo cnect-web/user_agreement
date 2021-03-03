@@ -4,10 +4,11 @@ namespace Drupal\user_agreement\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\user_agreement\Entity\UserAgreement;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Messenger\Messenger;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
+use Drupal\user_agreement\Entity\UserAgreement;
+use Drupal\user_agreement\Event\UserSubmissionEvent;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class AgreementForm.
@@ -52,6 +53,35 @@ class AgreementForm extends FormBase {
   protected $casHelper;
 
   /**
+   * The CAS user manager service.
+   *
+   * @var \Drupal\cas\Service\CasUserManager
+   */
+  protected $casUserManager;
+
+
+  /**
+   * The event dispatcher service.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
+   * The module settings.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  protected $userAgreementSettings;
+
+  /**
+   * The module settings.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  protected $casSettings;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -62,6 +92,11 @@ class AgreementForm extends FormBase {
     $instance->privateTempStore = $tempstore->get('user_agreement');
     $instance->messenger = $container->get('messenger');
     $instance->casHelper = $container->get('cas.helper');
+    $instance->casUserManager = $container->get('cas.user_manager');
+    $instance->eventDispatcher = $container->get('event_dispatcher');
+    $config_factory = $container->get('config.factory');
+    $instance->userAgreementSettings = $config_factory->get('user_agreement.user_agreement_settings');
+    $instance->casSettings = $config_factory->get('cas.settings');
     return $instance;
   }
 
@@ -140,35 +175,90 @@ class AgreementForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->privateTempStore->delete('handling_response');
-
     $values = $form_state->getValues();
-    $user_agreement = $this
-      ->entityTypeManager
-      ->getStorage('user_agreement')
-      ->load($values['agreement_id']);
+    if ($values['agree_box'] == 0) {
+      $this->messenger->addError($this->t("Login cancelled: you have rejected the user agreement."));
 
-    // If accepted, add the agreement info to the private tempstore for
-    // processing later.
-    if ($values['agree_box'] == 1) {
-      $accepted = $this->privateTempStore->get('accepted');
-      $accepted[$user_agreement->id()] = $user_agreement->getRevisionId();
-      $this->privateTempStore->set('accepted', $accepted);
-    }
-    // Otherwise, reset state.
-    else {
       $this->privateTempStore->delete('email_hash');
       $this->privateTempStore->delete('accepted');
       $this->privateTempStore->delete('ticket');
       $this->privateTempStore->delete('property_bag');
       $this->privateTempStore->delete('service_parameters');
 
-      $this->messenger->addError($this->t("You have rejected the user agreement."));
-
+      // Redirect to the page where the login was invoked.
       $this->casHelper->handleReturnToParameter($this->getRequest());
       $url = Url::fromRoute('<front>');
       $form_state->setRedirectUrl($url);
+      return;
     }
+    else {
+      $accepted = $this->privateTempStore->get('accepted');
+      $accepted[$values['agreement_id']] = $values['agreement_vid'];
+      $this->privateTempStore->set('accepted', $accepted);
+    }
+
+    $user_agreements = _user_agreement_check_user_agreements($this->privateTempStore->get('email_hash'));
+
+    if (!empty($user_agreements)) {
+      $user_agreement = reset($user_agreements);
+
+      $this->messenger
+        ->addWarning($this->t('You must agree with %title to proceed.', [
+          '%title' => $user_agreement->label(),
+        ]));
+      $options['query'] = $this->privateTempStore->get('service_parameters');
+      $url = Url::fromRoute('entity.user_agreement.canonical', ['user_agreement' => $user_agreement->id()], $options)->toString(TRUE);
+    }
+    else {
+      $url = $this->finishLogin();
+    }
+
+    $response = new TrustedRedirectResponse($url->getGeneratedUrl());
+    $response->getCacheableMetadata()->addCacheContexts(['session']);
+    $form_state->setResponse($response);
+  }
+
+  public function finishLogin() {
+
+    /** @var string $ticket */
+    $ticket = $this->privateTempStore->get('ticket');
+    /** @var \Drupal\cas\CasPropertyBag $property_bag */
+    $property_bag = $this->privateTempStore->get('property_bag');
+    /** @var array $service_parameters */
+    $service_parameters = $this->privateTempStore->get('service_parameters');
+    /** @var array $accepted_agreements */
+    $accepted_agreements = $this->privateTempStore->get('accepted');
+
+    $this->privateTempStore->delete('email_hash');
+    $this->privateTempStore->delete('accepted');
+    $this->privateTempStore->delete('ticket');
+    $this->privateTempStore->delete('property_bag');
+    $this->privateTempStore->delete('service_parameters');
+
+    // Finish login.
+    $this->casUserManager->login($property_bag, $ticket);
+
+    foreach($accepted_agreements as $agreement_id => $revision_id) {
+      $user_agreement = UserAgreement::load($agreement_id);
+      $newEvent = new UserSubmissionEvent($user_agreement);
+      $this->eventDispatcher->dispatch(UserSubmissionEvent::ACCEPTED, $newEvent);
+    }
+
+    $message = $this->casSettings->get('login_success_message');
+    $this->messenger->addMessage($this->t($message), 'status');
+
+    // Final redirect.
+    if($configured_url = $this->userAgreementSettings->get('redirect_url')) {
+      $redirect_url = Url::fromUserInput($configured_url, ['absolute' => TRUE]);
+    }
+    else {
+      $this->getRequest()->query->add($service_parameters);
+      $this->casHelper->handleReturnToParameter($this->getRequest());
+      $redirect_url = Url::fromRoute('<front>');
+    }
+
+    $url = $redirect_url->toString(TRUE);
+    return $url;
   }
 
 }

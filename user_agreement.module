@@ -172,3 +172,20 @@ function user_agreement_user_agreement_revision_delete(UserAgreement $user_agree
   }
 
 }
+
+
+function _user_agreement_check_user_agreements($hash) {
+  // todo Improve this to get only agreements the user hasn't accepted yet.
+  $user_agreements = \Drupal::entityTypeManager()
+    ->getStorage('user_agreement')
+    ->loadByProperties(['status' => '1']);
+
+  // Remove user agreements the user has agreed to from the array.
+  foreach ($user_agreements as $index => $user_agreement) {
+    if (_user_agreement_user_has_agreed($user_agreement, $hash)) {
+      unset($user_agreements[$index]);
+    }
+  }
+
+  return $user_agreements;
+}

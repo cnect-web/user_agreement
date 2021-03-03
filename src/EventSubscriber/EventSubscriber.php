@@ -13,11 +13,11 @@ use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Class UserAgreementSubmissionEventSubscriber.
+ * Class EventSubscriber.
  *
  * Provides event subscriber for agree, decline events.
  */
-class UserAgreementSubmissionEventSubscriber implements EventSubscriberInterface {
+class EventSubscriber implements EventSubscriberInterface {
 
   use StringTranslationTrait;
 
@@ -43,7 +43,7 @@ class UserAgreementSubmissionEventSubscriber implements EventSubscriberInterface
   protected $currentUser;
 
   /**
-   * Constructs a new UserAgreementSubmissionEventSubscriber object.
+   * Constructs a new EventSubscriber object.
    */
   public function __construct(EntityTypeManager $entity_type_manager, Messenger $messenger, AccountProxy $current_user) {
     $this->entityTypeManager = $entity_type_manager;

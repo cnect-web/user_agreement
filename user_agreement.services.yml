@@ -1,12 +1,12 @@
 services:
-  user_agreement.redirect_event_subscriber:
-    class: Drupal\user_agreement\EventSubscriber\UserAgreementRedirectSubscriber
-    arguments: ['@current_route_match', '@entity_type.manager', '@messenger', '@tempstore.private', '@cas.user_manager', '@cas.helper', '@event_dispatcher', '@config.factory']
+  user_agreement.redirect_subscriber:
+    class: Drupal\user_agreement\EventSubscriber\RedirectSubscriber
+    arguments: ['@tempstore.private', '@messenger']
     tags:
       - {name: event_subscriber}
 
   user_agreement.user_submission_subscriber:
-    class: Drupal\user_agreement\EventSubscriber\UserAgreementSubmissionEventSubscriber
+    class: Drupal\user_agreement\EventSubscriber\EventSubscriber
     arguments: ['@entity_type.manager', '@messenger', '@current_user']
     tags:
     - { name: event_subscriber }
