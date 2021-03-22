@@ -4,7 +4,7 @@ namespace Drupal\user_agreement\EventSubscriber;
 
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Session\AccountProxy;
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\user_agreement\Entity\UserAgreementSubmission;
@@ -45,7 +45,7 @@ class EventSubscriber implements EventSubscriberInterface {
   /**
    * Constructs a new EventSubscriber object.
    */
-  public function __construct(EntityTypeManager $entity_type_manager, Messenger $messenger, AccountProxy $current_user) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, Messenger $messenger, AccountProxy $current_user) {
     $this->entityTypeManager = $entity_type_manager;
     $this->messenger = $messenger;
     $this->currentUser = $current_user;
