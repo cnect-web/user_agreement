@@ -66,3 +66,12 @@ function user_agreement_update_8001() {
     }
   }
 }
+
+/**
+ * Delete hanging elements from queue.
+ */
+function user_agreement_update_8002() {
+  \Drupal::database()->delete('queue')
+    ->condition('name', 'user_agreement_queue')
+    ->execute();
+}
