@@ -80,6 +80,9 @@ class RedirectSubscriber implements EventSubscriberInterface {
           // Redirect to user agreement page.
           $options['query'] = $event->getServiceParameters();
 
+          $random = new \Drupal\Component\Utility\Random();
+          $options['query']['vcb'] = Crypt::hashBase64($random->string(32));
+
           $this->messenger
             ->addWarning($this->t('You must agree with %title to proceed.', [
               '%title' => $user_agreement->label(),
