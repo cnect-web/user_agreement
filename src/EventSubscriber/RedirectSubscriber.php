@@ -5,6 +5,7 @@ namespace Drupal\user_agreement\EventSubscriber;
 use Drupal\cas\Event\CasPreUserLoadRedirectEvent;
 use Drupal\cas\Service\CasHelper;
 use Drupal\Component\Utility\Crypt;
+use Drupal\Component\Utility\Random;
 use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountProxy;
@@ -80,7 +81,7 @@ class RedirectSubscriber implements EventSubscriberInterface {
           // Redirect to user agreement page.
           $options['query'] = $event->getServiceParameters();
 
-          $random = new \Drupal\Component\Utility\Random();
+          $random = new Random();
           $options['query']['vcb'] = Crypt::hashBase64($random->string(32));
 
           $this->messenger
