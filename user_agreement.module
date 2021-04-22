@@ -38,7 +38,8 @@ function user_agreement_user_agreement_view_alter(array &$build, EntityInterface
   if ($account->isAnonymous()) {
     $tempstore = \Drupal::service('tempstore.private');
     $store = $tempstore->get('user_agreement');
-    if($property_bag = $store->get('property_bag')) {
+    $vcb = \Drupal::request()->query->get('vcb');
+    if (($property_bag = $store->get('property_bag')) && ($vcb)) {
       $hash = Crypt::hashBase64($property_bag->getAttribute('email'));
 
       if (!_user_agreement_user_has_agreed($entity, $hash)) {
@@ -59,6 +60,7 @@ function user_agreement_user_agreement_view_alter(array &$build, EntityInterface
       ];
     }
   }
+  $build['#cache']['max-age'] = 0;
 }
 
 /**
