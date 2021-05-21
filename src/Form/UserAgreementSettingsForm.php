@@ -42,16 +42,10 @@ class UserAgreementSettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('user_agreement.user_agreement_settings');
 
-    $description = implode('<br>', [
-      "Leave empty to be redirected to the page from where you invoked the login.",
-      "If you wish to override this behaviour, specify the destination here.",
-      "Internal paths should start with a /, e.g. /documentation",
-    ]);
-
     $form['redirect_url'] = [
       '#title' => $this->t("Redirect to URL"),
       '#type' => 'textfield',
-      '#description' => $this->t($description),
+      '#description' => $this->t("Leave empty to be redirected to the page from where you invoked the login.<\br>If you wish to override this behaviour, specify the destination here.<\br>Internal paths should start with a /, e.g. /documentation"),
       '#default_value' => $config->get('redirect_url'),
     ];
 

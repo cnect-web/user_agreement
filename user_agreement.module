@@ -11,6 +11,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\user_agreement\Entity\UserAgreement;
 use Drupal\user_agreement\Entity\UserAgreementSubmission;
+use Drupal\user_agreement\Form\AgreementForm;
 use Drupal\user\Entity\User;
 use Drupal\Component\Utility\Crypt;
 
@@ -44,7 +45,7 @@ function user_agreement_user_agreement_view_alter(array &$build, EntityInterface
 
       if (!_user_agreement_user_has_agreed($entity, $hash)) {
         $build['agreement_form'] = \Drupal::formBuilder()
-          ->getForm(Drupal\user_agreement\Form\AgreementForm::class);
+          ->getForm(AgreementForm::class);
       }
     }
   }
@@ -68,7 +69,7 @@ function user_agreement_user_agreement_view_alter(array &$build, EntityInterface
  *
  * Verifies if an account is exempt of filling user agreements.
  *
- * @param \Drupal\user\Entity\User $user
+ * @param \Drupal\Core\Session\AccountProxy $account
  *   An user account.
  *
  * @return bool
@@ -175,9 +176,18 @@ function user_agreement_user_agreement_revision_delete(UserAgreement $user_agree
 
 }
 
-
+/**
+ * Helper.
+ *
+ * Returns user_agreement entities that user hasn't yet agreed to.
+ *
+ * @param string $hash
+ *   The email hash.
+ *
+ * @return \Drupal\Core\Entity\EntityInterface[]
+ *   An array containing user_agreement entities that an user hasn't accepted.
+ */
 function _user_agreement_check_user_agreements($hash) {
-  // todo Improve this to get only agreements the user hasn't accepted yet.
   $user_agreements = \Drupal::entityTypeManager()
     ->getStorage('user_agreement')
     ->loadByProperties(['status' => '1']);

@@ -102,7 +102,7 @@ class EventSubscriber implements EventSubscriberInterface {
     $user_agreement = $event->user_agreement;
 
     $this->messenger->addMessage($this->t('You have not agreed with %label.', [
-      '%label' => $user_agreement->label()
+      '%label' => $user_agreement->label(),
     ]), 'error');
   }
 

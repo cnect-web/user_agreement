@@ -46,7 +46,7 @@ function user_agreement_update_8001() {
     ])
     ->setDisplayOptions("form", [
       "type" => "string_textfield",
-      "weight" => -3
+      "weight" => -3,
     ]);
 
   \Drupal::entityDefinitionUpdateManager()

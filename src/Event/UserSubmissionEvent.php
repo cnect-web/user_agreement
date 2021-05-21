@@ -2,7 +2,6 @@
 
 namespace Drupal\user_agreement\Event;
 
-use Drupal\Core\Url;
 use Drupal\user_agreement\Entity\UserAgreement;
 use Symfony\Component\EventDispatcher\Event;
 
@@ -24,10 +23,8 @@ class UserSubmissionEvent extends Event {
   /**
    * Constructs the object.
    *
-   * @param \Drupal\user_agreement\Entity\UserAgreementSubmission $submission
+   * @param \Drupal\user_agreement\Entity\UserAgreement $user_agreement
    *   The user agreement submission entity.
-   * @param \Drupal\user\UserInterface $account
-   *   The account of the logged in user.
    */
   public function __construct(UserAgreement $user_agreement) {
     $this->user_agreement = $user_agreement;

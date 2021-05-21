@@ -218,6 +218,15 @@ class AgreementForm extends FormBase {
     $form_state->setResponse($response);
   }
 
+  /**
+   * Method to finish login if user agrees.
+   *
+   * @return \Drupal\Core\GeneratedUrl|string
+   *   The url to redirect to after login finished.
+   *
+   * @throws \Drupal\Core\TempStore\TempStoreException
+   * @throws \Drupal\cas\Exception\CasLoginException
+   */
   public function finishLogin() {
 
     /** @var string $ticket */
@@ -238,17 +247,20 @@ class AgreementForm extends FormBase {
     // Finish login.
     $this->casUserManager->login($property_bag, $ticket);
 
-    foreach($accepted_agreements as $agreement_id => $revision_id) {
+    foreach ($accepted_agreements as $agreement_id => $revision_id) {
       $user_agreement = UserAgreement::load($agreement_id);
       $newEvent = new UserSubmissionEvent($user_agreement);
       $this->eventDispatcher->dispatch(UserSubmissionEvent::ACCEPTED, $newEvent);
     }
 
+    // Ignoring this because it isn't incorrect.
+    // @codingStandardsIgnoreStart
     $message = $this->casSettings->get('login_success_message');
     $this->messenger->addMessage($this->t($message), 'status');
+    // @codingStandardsIgnoreEnd
 
     // Final redirect.
-    if($configured_url = $this->userAgreementSettings->get('redirect_url')) {
+    if ($configured_url = $this->userAgreementSettings->get('redirect_url')) {
       $redirect_url = Url::fromUserInput($configured_url, ['absolute' => TRUE]);
     }
     else {

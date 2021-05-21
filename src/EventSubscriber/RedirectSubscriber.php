@@ -54,13 +54,13 @@ class RedirectSubscriber implements EventSubscriberInterface {
   /**
    * React to a user logging in using CAS.
    *
-   * @param \Drupal\cas\Event\CasPreUserLoadEvent $event
+   * @param \Drupal\cas\Event\CasPreUserLoadRedirectEvent $event
    *   CAS pre user load event.
    */
   public function preUserLoadRedirect(CasPreUserLoadRedirectEvent $event) {
     if (($email = $event->getPropertyBag()->getAttribute('email'))) {
       // User can be exempt of agreeing, like administrators.
-      $proxy = new AccountProxy;
+      $proxy = new AccountProxy();
       if ($account = user_load_by_mail($email)) {
         $proxy->setAccount($account);
       }

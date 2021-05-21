@@ -225,7 +225,7 @@ class UserAgreementSubmission extends ContentEntityBase implements UserAgreement
       ])
       ->setDisplayOptions("form", [
         "type" => "string_textfield",
-        "weight" => -3
+        "weight" => -3,
       ]);
 
     $fields['created'] = BaseFieldDefinition::create('created')
@@ -246,6 +246,8 @@ class UserAgreementSubmission extends ContentEntityBase implements UserAgreement
    *   The submission status (Accepted or Rejected).
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
+   *   An array containing the user_agreement_submission entity.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
@@ -262,10 +264,12 @@ class UserAgreementSubmission extends ContentEntityBase implements UserAgreement
   /**
    * Load user agreements submissions by email hash.
    *
-   * @param $email_hash
+   * @param string $email_hash
    *   The email hash to load submissions for.
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
+   *   An array containing the user_agreement_submission entity.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
